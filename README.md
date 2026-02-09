@@ -2,8 +2,6 @@
 
 Dieses Repository enthält den Docker-Stack für den Betrieb des Hydra Servers.
 
-# Hydra Server – Docker Stack
-
 - 🌐 **Website:** [hydra-karte.de](https://hydra-karte.de)
 - 📖 **Docs:** [docs.hydra-karte.de](https://docs.hydra-karte.de)
 - 🐳 **Docker Hub:** [hydrakarte/hydra-server](https://hub.docker.com/r/hydrakarte/hydra-server)
