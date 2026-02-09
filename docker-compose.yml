@@ -1,0 +1,31 @@
+services:
+  
+  app:
+    image: hydrakarte/hydra-server:latest
+    restart: unless-stopped
+    env_file:
+      - config.env
+    #ports:
+    # - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: mariadb:11.8
+    restart: unless-stopped
+    env_file:
+      - config.env
+    command: >
+      --transaction-isolation=READ-COMMITTED
+      --binlog-format=ROW
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db_data:
