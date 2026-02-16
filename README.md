@@ -158,3 +158,11 @@ docker compose up -d
 * Änderungen an der `config.env` werden beim **nächsten Start** übernommen
 * Einige Konfigurationswerte können zusätzlich über die Weboberfläche geändert werden
 * Docker-Environment-Variablen haben beim Start Vorrang
+
+## Lizenz
+
+Hydra Server ist unter der PolyForm Strict License 1.0.0 lizenziert.
+Kommerzielle Nutzungslizenzen sind auf Anfrage erhältlich.
+
+Hydra Server is licensed under the PolyForm Strict License 1.0.0.
+Commercial licensing options are available upon request.
