@@ -1,21 +1,43 @@
 services:
   
+  # -------------------------------
+  # Hydra Server – Hauptanwendung
+  #
+  # Stellt die Hauptfunktionen von Hydra bereit.
+  # Erreichbar unter http://[IP-Adresse]:3000
+  # Konfiguration erfolgt über config.env
+  # -------------------------------
   app:
     image: hydrakarte/hydra-server:latest
     restart: unless-stopped
     env_file:
       - config.env
-    #ports:
-    # - "8080:8080"
+    ports:
+      - "3000:3000"
     depends_on:
       db:
         condition: service_healthy
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+    networks:
+      - internal
 
+  # -------------------------------
+  # MariaDB – Datenbank für Hydra
+  #
+  # speichert alle Daten von Hydra.
+  # Konfiguration erfolgt über config.env
+  # -------------------------------
   db:
     image: mariadb:11.8
     restart: unless-stopped
     env_file:
       - config.env
+    environment:
+      - MYSQL_DATABASE=${DATABASE_NAME}
+      - MYSQL_USER=${DATABASE_USER}
+      - MYSQL_PASSWORD=${DATABASE_PASS}
+      - MYSQL_ROOT_PASSWORD=${DATABASE_PASS}
     command: >
       --transaction-isolation=READ-COMMITTED
       --binlog-format=ROW
@@ -26,6 +48,31 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    networks:
+      - internal
+
+
+  # -------------------------------
+  # Watchtower – Automatische Updates
+  #
+  # Aktualisiert Container automatisch bei neuen Images.
+  # Entfernen, wenn keine Auto-Updates gewünscht sind
+  # oder bereits eine Watchtower-Instanz läuft.
+  # -------------------------------
+  watchtower:
+    image: nickfedor/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_LABEL_ENABLE=true
 
 volumes:
   db_data:
+
+networks:
+  internal:
+    name: hydra-internal

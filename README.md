@@ -1,31 +1,35 @@
 # Hydra Server – Docker Stack
 
-Dieses Repository enthält den Docker-Stack für den Betrieb des Hydra Servers.
+Dieses Repository enthält den Docker-Stack für den Betrieb des **Hydra Servers**.
 
-- 🌐 **Website:** [hydra-karte.de](https://hydra-karte.de)
-- 📖 **Docs:** [docs.hydra-karte.de](https://docs.hydra-karte.de)
-- 🐳 **Docker Hub:** [hydrakarte/hydra-server](https://hub.docker.com/r/hydrakarte/hydra-server)
+* 🌐 **Website:** [https://hydra-karte.de](https://hydra-karte.de)
+* 📖 **Docs:** [https://docs.hydra-karte.de](https://docs.hydra-karte.de)
+* 🐳 **Docker Hub:** [https://hub.docker.com/r/hydrakarte/hydra-server](https://hub.docker.com/r/hydrakarte/hydra-server)
 
+---
 
 ## Voraussetzungen
-- AMD64 / x86-64 basierter Host
-- Docker
-- Docker Compose
 
+* AMD64 / x86-64 basierter Host
+* Docker
+* Docker Compose (`docker compose`)
 
-## Installation
+---
 
-### 1. Dateien bereitstellen
+# Installation
+
+## 1. Dateien bereitstellen
 
 Du hast zwei Möglichkeiten:
 
-**Variante A: Repository klonen**
+### Variante A – Repository klonen
+
 ```bash
 git clone https://github.com/hydra-karte/Hydra-Server.git
-cd hydra-server
+cd Hydra-Server
 ```
 
-**Variante B: Dateien manuell erstellen**
+### Variante B – Dateien manuell erstellen
 
 Erstelle in einem leeren Verzeichnis die folgenden Dateien:
 
@@ -34,9 +38,38 @@ Erstelle in einem leeren Verzeichnis die folgenden Dateien:
 
 und kopiere den jeweiligen Inhalt hinein.
 
-### 2. Datenbank-Zugangsdaten anpassen
+---
 
-Öffne die Datei `config.env` und passe die Datenbank-Zugangsdaten an.
+# Betriebsarten
+
+Es stehen zwei Compose-Varianten zur Verfügung:
+
+## 🔹 Variante A – Direktbetrieb (ohne Reverse Proxy)
+
+* Zugriff über:
+  `http://[IP-Adresse]:3000`
+* Port 3000 wird direkt veröffentlicht
+* Geeignet für:
+
+  * interne Netzwerke
+  * Testumgebungen
+  * einfache Installationen
+
+## 🔹 Variante B – Betrieb mit Reverse Proxy (z. B. Traefik)
+
+* Keine direkten Ports werden veröffentlicht
+* Zugriff erfolgt über eine Domain (z. B. `https://example.com`)
+* Empfohlen für:
+
+  * Produktivbetrieb
+  * öffentliche Erreichbarkeit
+  * HTTPS/TLS
+
+---
+
+# Konfiguration (`config.env`)
+
+## 2. Datenbank-Zugangsdaten anpassen
 
 ```env
 DATABASE_USER=hydra
@@ -52,45 +85,64 @@ openssl rand -base64 32
 
 und trage es bei `DATABASE_PASS` ein.
 
+⚠️ Der Server startet nicht korrekt, wenn `DATABASE_PASS` leer bleibt.
+
 ---
 
-### 3. Auth-Secret für Session-Authentifizierung erzeugen
-
-Der Server benötigt ein Secret für die Session-Authentifizierung.
+## 3. Auth-Secret für Session-Authentifizierung erzeugen
 
 ```env
 AUTH_SECRET=
 ```
 
-Erzeuge auch hier ein sicheres Secret, z. B.:
+Erzeuge ein sicheres Secret, z. B.:
 
 ```bash
 openssl rand -base64 48
 ```
 
 **Wichtig:**
-Dieses Secret sollte **nachträglich nicht geändert** werden, da sonst bestehende Sessions ungültig werden.
+Dieses Secret darf nachträglich nicht geändert werden, da sonst bestehende Sessions ungültig werden.
 
+⚠️ `AUTH_SECRET` darf nicht leer sein.
 
-### 4. Instanz-Daten konfigurieren
+---
 
-Diese Werte werden in der Weboberfläche angezeigt und für externe Links genutzt.
+## 4. Instanz-Daten konfigurieren
 
 ```env
-INSTANCE_NAME=My Hydra Server
 INSTANCE_URL=https://example.com
 ```
 
-* `INSTANCE_NAME`
-  Anzeigename der Instanz (z. B. Organisation oder Standort)
+### `INSTANCE_URL`
 
-* `INSTANCE_URL`
-  Öffentliche URL, unter der der Server erreichbar ist
-  (inkl. `https://`)
+Öffentliche URL, unter der der Server erreichbar ist.
+Diese Angabe ist zwingend erforderlich und muss mit `http://` oder `https://` beginnen.
+Es darf kein Pfad enthalten sein (z. B. korrekt: `https://example.com`).
 
-### 5. SMTP / Mail-Einstellungen vornehmen
+---
+
+### Optionale Anzeigenamen
+
+Diese Werte können auch später über die Weboberfläche konfiguriert werden:
+
+```env
+# INTERNAL_INSTANCENAME=Hydranten SG Beispielhausen
+# CLOUD_INSTANCENAME=SG Beispielhausen
+```
+
+* `INTERNAL_INSTANCENAME`
+  Anzeigename der Instanz (Organisation/Standort)
+
+* `CLOUD_INSTANCENAME`
+  Öffentlicher Anzeigename in der Hydra Cloud
+
+---
+
+## 5. SMTP / Mail-Einstellungen
 
 Der Server kann E-Mails versenden (z. B. Provisionierungen).
+Dafür wird ein SMTP-Server benötigt.
 
 ```env
 MAIL_ENABLED=true
@@ -102,38 +154,27 @@ SMTP_PASS=yourpassword
 SMTP_FROM=from@example.com
 ```
 
-**Hinweise:**
+### Hinweise
 
-* `MAIL_ENABLED=false` deaktiviert den Mailversand vollständig
-* `SMTP_SECURE=true` nutzt TLS (empfohlen)
+* `MAIL_ENABLED=false` deaktiviert den Mailversand
+* `SMTP_SECURE=true` aktiviert TLS (empfohlen)
 * `SMTP_FROM` ist die Absender-Adresse
 
+---
 
-## Stack starten
+# Stack starten
 
-Starte den Stack im Verzeichnis mit der `docker-compose.yml`:
+Im Verzeichnis mit der `docker-compose.yml`:
 
 ```bash
 docker compose up -d
 ```
 
-Der Server wartet automatisch, bis die Datenbank bereit ist.
+Der Server wartet automatisch, bis die Datenbank vollständig bereit ist.
 
+---
 
-## Ports & Reverse Proxy
-
-Standardmäßig werden **keine Ports direkt veröffentlicht**.
-
-```yaml
-#ports:
-# - "8080:8080"
-```
-
-**Empfohlen:**
-Betrieb hinter einem Reverse Proxy (z. B. Nginx, Apache, Traefik, Caddy) mit TLS.
-
-
-## Datenpersistenz
+# Datenpersistenz
 
 Die Datenbank wird in einem Docker Volume gespeichert:
 
@@ -144,24 +185,34 @@ volumes:
 
 Ein Neustart oder Update des Stacks löscht **keine Daten**.
 
-## Update
+---
 
-Um auf die neueste Version zu aktualisieren:
+# Update
+
+### Wenn Watchtower aktiviert ist
+
+Updates erfolgen automatisch.
+
+### Manuelles Update
 
 ```bash
 docker compose pull
 docker compose up -d
 ```
 
-## Hinweise
+---
 
-* Änderungen an der `config.env` werden beim **nächsten Start** übernommen
-* Einige Konfigurationswerte können zusätzlich über die Weboberfläche geändert werden
+# Hinweise
+
+* Änderungen an der `config.env` werden beim nächsten Container-Neustart übernommen
+* Einige Einstellungen können zusätzlich über die Weboberfläche geändert werden
 * Docker-Environment-Variablen haben beim Start Vorrang
 
-## Lizenz
+---
 
-Hydra Server ist unter der PolyForm Strict License 1.0.0 lizenziert.
+# Lizenz
+
+Hydra Server ist unter der **PolyForm Strict License 1.0.0** lizenziert.
 Kommerzielle Nutzungslizenzen sind auf Anfrage erhältlich.
 
 Hydra Server is licensed under the PolyForm Strict License 1.0.0.

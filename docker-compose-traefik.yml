@@ -1,0 +1,119 @@
+services:
+  # -------------------------------
+  # Hydra Server – Hauptanwendung
+  #
+  # Stellt die Hauptfunktionen von Hydra bereit.
+  # Konfiguration erfolgt über config.env
+  # -------------------------------
+  app:
+    image: hydrakarte/hydra-server:latest
+    restart: unless-stopped
+    env_file:
+      - config.env
+    # Notfall-Zugriff auf Port 3000, wenn Traefik nicht läuft
+    #ports:
+    # - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+      - "traefik.enable=true"
+      - "traefik.http.routers.hydra.rule=Host(`example.com`)" # Ersetze example.com durch deine tatsächliche Domain
+      - "traefik.http.routers.hydra.entrypoints=websecure"
+      - "traefik.http.routers.hydra.tls.certresolver=httpresolver"
+      - "traefik.http.services.hydra.loadbalancer.server.port=3000"
+    networks:
+      - internal
+      - proxy
+
+  # -------------------------------
+  # MariaDB – Datenbank für Hydra
+  #
+  # speichert alle Daten von Hydra.
+  # Konfiguration erfolgt über config.env
+  # -------------------------------
+  db:
+    image: mariadb:11.8
+    restart: unless-stopped
+    env_file:
+      - config.env
+    environment:
+      - MYSQL_DATABASE=${DATABASE_NAME}
+      - MYSQL_USER=${DATABASE_USER}
+      - MYSQL_PASSWORD=${DATABASE_PASS}
+      - MYSQL_ROOT_PASSWORD=${DATABASE_PASS}
+    command: >
+      --transaction-isolation=READ-COMMITTED
+      --binlog-format=ROW
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+  # -------------------------------
+  # Traefik – Reverse Proxy und SSL
+  #
+  # Leitet Anfragen an den Hydra-Server weiter und verwaltet SSL-Zertifikate über Let's Encrypt.
+  # Entfernen, wenn kein Reverse Proxy benötigt wird
+  # oder bereits ein anderer Reverse Proxy (z.B. Nginx oder Apache) verwendet wird.
+  # -------------------------------
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      # Docker Provider
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      # EntryPoints
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      # Global HTTP -> HTTPS Redirect
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # ACME HTTP Challenge
+      - "--certificatesresolvers.httpresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.httpresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.httpresolver.acme.email=admin@example.com" # Ersetze mit deiner E-Mail-Adresse für Let's Encrypt
+      - "--certificatesresolvers.httpresolver.acme.storage=/acme/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - router_acme:/acme
+    networks:
+      - proxy
+
+  # -------------------------------
+  # Watchtower – Automatische Updates
+  #
+  # Aktualisiert Container automatisch bei neuen Images.
+  # Entfernen, wenn keine Auto-Updates gewünscht sind
+  # oder bereits eine Watchtower-Instanz läuft.
+  # -------------------------------
+  watchtower:
+    image: nickfedor/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - WATCHTOWER_LABEL_ENABLE=true
+
+volumes:
+  db_data:
+  router_acme:
+
+networks:
+  internal:
+    name: hydra-internal
+  proxy:
+    name: hydra-proxy
