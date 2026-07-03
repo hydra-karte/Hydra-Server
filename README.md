@@ -34,7 +34,7 @@ cd Hydra-Server
 Erstelle in einem leeren Verzeichnis die folgenden Dateien:
 
 * `docker-compose.yml`
-* `config.env`
+* `.env`
 
 und kopiere den jeweiligen Inhalt hinein.
 
@@ -67,7 +67,7 @@ Es stehen zwei Compose-Varianten zur Verfügung:
 
 ---
 
-# Konfiguration (`config.env`)
+# Konfiguration (`.env`)
 
 ## 2. Datenbank-Zugangsdaten anpassen
 
@@ -204,7 +204,7 @@ docker compose up -d
 
 # Hinweise
 
-* Änderungen an der `config.env` werden beim nächsten Container-Neustart übernommen
+* Änderungen an der `.env` werden beim nächsten Container-Neustart übernommen
 * Einige Einstellungen können zusätzlich über die Weboberfläche geändert werden
 * Docker-Environment-Variablen haben beim Start Vorrang
 
