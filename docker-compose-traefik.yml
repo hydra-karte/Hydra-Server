@@ -9,7 +9,7 @@ services:
     image: hydrakarte/hydra-server:latest
     restart: unless-stopped
     env_file:
-      - config.env
+      - .env
     # Notfall-Zugriff auf Port 3000, wenn Traefik nicht läuft
     #ports:
     # - "3000:3000"
@@ -36,8 +36,6 @@ services:
   db:
     image: mariadb:11.8
     restart: unless-stopped
-    env_file:
-      - config.env
     environment:
       - MYSQL_DATABASE=${DATABASE_NAME}
       - MYSQL_USER=${DATABASE_USER}
